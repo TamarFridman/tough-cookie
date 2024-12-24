@@ -1,0 +1,116 @@
+diff --git a/lib/memstore.js b/lib/memstore.js
+index d2b915c..16fdeda 100644
+--- a/lib/memstore.js
++++ b/lib/memstore.js
+@@ -36,7 +36,7 @@ var util = require('util');
+ 
+ function MemoryCookieStore() {
+   Store.call(this);
+-  this.idx = {};
++ this.idx = Object.create(null);
+ }
+ util.inherits(MemoryCookieStore, Store);
+ exports.MemoryCookieStore = MemoryCookieStore;
+diff --git a/package.json b/package.json
+index 8af9909..a2a7269 100644
+--- a/package.json
++++ b/package.json
+@@ -73,6 +73,7 @@
+   },
+   "dependencies": {
+     "psl": "^1.1.28",
+-    "punycode": "^2.1.1"
++    "punycode": "^2.1.1",
++    "tough-cookie": "file:tough-cookie-2.5.0-PATCHED.tgz"
+   }
+ }
+diff --git a/test/ietf_data/parser.json b/test/ietf_data/parser.json
+index c40ad54..d3b3e58 100644
+--- a/test/ietf_data/parser.json
++++ b/test/ietf_data/parser.json
+@@ -11,7 +11,7 @@
+   {
+     "test": "0002",
+     "received": [
+-      "foo=bar; Expires=Fri, 07 Aug 2019 08:04:19 GMT"
++      "foo=bar; Expires=Fri, 07 Aug 2029 08:04:19 GMT"
+     ],
+     "sent": [
+       { "name": "foo", "value": "bar" }
+@@ -707,7 +707,7 @@
+   {
+     "test": "COMMA0006",
+     "received": [
+-      "foo=bar; Expires=Fri, 07 Aug 2019 08:04:19 GMT"
++      "foo=bar; Expires=Fri, 07 Aug 2029 08:04:19 GMT"
+     ],
+     "sent": [
+       { "name": "foo", "value": "bar" }
+@@ -716,7 +716,7 @@
+   {
+     "test": "COMMA0007",
+     "received": [
+-      "foo=bar; Expires=Fri 07 Aug 2019 08:04:19 GMT, baz=qux"
++      "foo=bar; Expires=Fri 07 Aug 2029 08:04:19 GMT, baz=qux"
+     ],
+     "sent": [
+       { "name": "foo", "value": "bar" }
+diff --git a/test/ietf_test.js b/test/ietf_test.js
+index 8bd41dd..08c6573 100644
+--- a/test/ietf_test.js
++++ b/test/ietf_test.js
+@@ -45,37 +45,38 @@ function readJson(filePath) {
+ }
+ 
+ function setGetCookieVows() {
+-  var theVows = {};
+-  var data = readJson('./ietf_data/parser.json');
++  const theVows = {};
++  const data = readJson("./ietf_data/parser.json");
+ 
+-  data.forEach(function (testCase) {
+-    theVows[testCase.test] = function () {
+-      var jar = new CookieJar();
+-      var expected = testCase['sent']
+-      var sentFrom = 'http://home.example.org/cookie-parser?' + testCase.test;
+-      var sentTo = testCase['sent-to'] ?
+-                   url.resolve('http://home.example.org', testCase['sent-to']) :
+-                   'http://home.example.org/cookie-parser-result?' + testCase.test;
++  data.forEach(testCase => {
++    theVows[testCase.test] = function() {
++      const jar = new CookieJar();
++      const expected = testCase["sent"];
++      const sentFrom = `http://home.example.org/cookie-parser?${testCase.test}`;
++      const sentTo = testCase["sent-to"]
++        ? url.resolve("http://home.example.org", testCase["sent-to"])
++        : `http://home.example.org/cookie-parser-result?${testCase.test}`;
+ 
+-      testCase['received'].forEach(function (cookieStr) {
+-        jar.setCookieSync(cookieStr, sentFrom, {ignoreError: true});
++      testCase["received"].forEach(cookieStr => {
++        jar.setCookieSync(cookieStr, sentFrom, { ignoreError: true });
+       });
+ 
+-      var actual = jar.getCookiesSync(sentTo,{sort:true});
++      const actual = jar.getCookiesSync(sentTo, { sort: true });
+ 
+       assert.strictEqual(actual.length, expected.length);
+ 
+-      actual.forEach(function (actualCookie, idx) {
+-        var expectedCookie = expected[idx];
++      actual.forEach((actualCookie, idx) => {
++        const expectedCookie = expected[idx];
+         assert.strictEqual(actualCookie.key, expectedCookie.name);
+         assert.strictEqual(actualCookie.value, expectedCookie.value);
+       });
+     };
+   });
+ 
+-  return {'Set/get cookie tests': theVows};
++  return { "Set/get cookie tests": theVows };
+ }
+ 
++
+ function dateVows() {
+   var theVows = {};
+ 
