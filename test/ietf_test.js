@@ -45,36 +45,37 @@ function readJson(filePath) {
 }
 
 function setGetCookieVows() {
-  var theVows = {};
-  var data = readJson('./ietf_data/parser.json');
+  const theVows = {};
+  const data = readJson("./ietf_data/parser.json");
 
-  data.forEach(function (testCase) {
-    theVows[testCase.test] = function () {
-      var jar = new CookieJar();
-      var expected = testCase['sent']
-      var sentFrom = 'http://home.example.org/cookie-parser?' + testCase.test;
-      var sentTo = testCase['sent-to'] ?
-                   url.resolve('http://home.example.org', testCase['sent-to']) :
-                   'http://home.example.org/cookie-parser-result?' + testCase.test;
+  data.forEach(testCase => {
+    theVows[testCase.test] = function() {
+      const jar = new CookieJar();
+      const expected = testCase["sent"];
+      const sentFrom = `http://home.example.org/cookie-parser?${testCase.test}`;
+      const sentTo = testCase["sent-to"]
+        ? url.resolve("http://home.example.org", testCase["sent-to"])
+        : `http://home.example.org/cookie-parser-result?${testCase.test}`;
 
-      testCase['received'].forEach(function (cookieStr) {
-        jar.setCookieSync(cookieStr, sentFrom, {ignoreError: true});
+      testCase["received"].forEach(cookieStr => {
+        jar.setCookieSync(cookieStr, sentFrom, { ignoreError: true });
       });
 
-      var actual = jar.getCookiesSync(sentTo,{sort:true});
+      const actual = jar.getCookiesSync(sentTo, { sort: true });
 
       assert.strictEqual(actual.length, expected.length);
 
-      actual.forEach(function (actualCookie, idx) {
-        var expectedCookie = expected[idx];
+      actual.forEach((actualCookie, idx) => {
+        const expectedCookie = expected[idx];
         assert.strictEqual(actualCookie.key, expectedCookie.name);
         assert.strictEqual(actualCookie.value, expectedCookie.value);
       });
     };
   });
 
-  return {'Set/get cookie tests': theVows};
+  return { "Set/get cookie tests": theVows };
 }
+
 
 function dateVows() {
   var theVows = {};
